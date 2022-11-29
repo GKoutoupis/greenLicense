@@ -50,6 +50,15 @@ public class License {
         this.systemId = systemId;
     }
 
+    @Override
+    public String toString() {
+        return "License{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", software=" + software +
+                ", systemId='" + systemId + '\'' +
+                '}';
+    }
 }
     
     

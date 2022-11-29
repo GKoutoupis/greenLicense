@@ -45,6 +45,15 @@ public class Feature {
     public void setValue(final String value) {
         this.value = value;
     }
+
+    @Override
+    public String toString() {
+        return "Feature{" +
+                "id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", value='" + value + '\'' +
+                '}';
+    }
 }
     
     
