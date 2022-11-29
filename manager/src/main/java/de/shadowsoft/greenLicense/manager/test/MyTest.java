@@ -98,7 +98,7 @@ public class MyTest {
     }
 
     private void readLicense(GreenLicenseValidator validator, final License licenseConfiguration, final String licenseB64) throws DecryptionException, SystemValidationException, InvalidSignatureException {
-        System.out.println("---------------- Reading from base64 ----------------");
+        System.out.println("---------------- Reading from base64 /----------------");
         readGeneralLicense(validator, licenseConfiguration, Base64.getDecoder().decode(licenseB64.getBytes()));
     }
 
@@ -115,7 +115,7 @@ public class MyTest {
     private License setupLicense(final Software software, byte selector) throws IOException, InterruptedException {
         License createdLicense = new License();
         createdLicense.setName("license");
-        createdLicense.setSoftware(software.clone());
+        createdLicense.setSoftware(software.clone());// why clone
         createdLicense.setSystemId(getSystemId(selector));
         System.out.println(createdLicense);
         return createdLicense;
@@ -132,11 +132,13 @@ public class MyTest {
             Software software = createSoftware(keyPair);
             addFeatures(software, 5);//change
 
-            License licenseConfiguration = setupLicense(software, Byte.parseByte("00000000", 2));//check
+            License licenseConfiguration = setupLicense(software, Byte.parseByte("00000000", 2));//check | s -> binary
             byte[] licenseBytes = createLicense(licenseConfiguration);
             String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
             System.out.println(licenseB64);
 
+
+            //LOCKED CODE
             GreenLicenseValidator validator = new GreenLicenseReader(keyPair.getKeyPair().getPublic().getEncoded());
 
             readLicense(validator, licenseConfiguration, licenseBytes);
@@ -148,4 +150,29 @@ public class MyTest {
         }
         deleteDirectory(new File(TEST_DATA_PATH));
     }
+
+    @Test
+    public void App() throws DataLoadingException, GeneralSecurityException, IOException, InterruptedException, NoSuchKeyPairException {
+
+        FssKeyPair keyPair = createKeyPair(1024);
+
+        Software software = createSoftware(keyPair);
+
+        Feature feature = new Feature();
+        feature.setName("feature");
+        feature.setValue("The value of the feature");
+        software.addFeature(feature);
+
+        License licenseConfiguration = new License();
+        licenseConfiguration.setName("license");
+        licenseConfiguration.setSoftware(software.clone());
+        licenseConfiguration.setSystemId(getSystemId(Byte.parseByte("00000000", 2)));
+
+        byte[] licenseBytes = new LicenseCreator().createLicense(licenseConfiguration);
+        String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
+
+        System.out.println(licenseB64);
+        //TODO: Make licenseB64 into file, Make Private key into file, Make function that is unlocked with public key
+    }
+
 }
