@@ -20,8 +20,7 @@ import de.shadowsoft.greenLicense.manager.tools.serializer.exception.DataLoading
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
@@ -30,6 +29,9 @@ import java.util.Comparator;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MyTest {
+
+    public static License LIC;
+    public static FssKeyPair KP;
 
     private static final String TEST_DATA_PATH = "./test/";
 
@@ -55,6 +57,7 @@ public class MyTest {
 
     private FssKeyPair createKeyPair(int keySize) throws GeneralSecurityException, IOException, DataLoadingException {
         FssKeyPair keyPair = KeyPairService.getInstance().createKeyPair(randomValue(5, 15), keySize);
+        KP = keyPair;
         System.out.println("KeyPair created");
         System.out.println(keyPair.toString());
         return keyPair;
@@ -133,6 +136,7 @@ public class MyTest {
             addFeatures(software, 5);//change
 
             License licenseConfiguration = setupLicense(software, Byte.parseByte("00000000", 2));//check | s -> binary
+            LIC =  licenseConfiguration;
             byte[] licenseBytes = createLicense(licenseConfiguration);
             String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
             System.out.println(licenseB64);
@@ -145,34 +149,31 @@ public class MyTest {
 
             readLicense(validator, licenseConfiguration, licenseB64);
 
+            FileWriter fw = new FileWriter("./src/main/java/de/shadowsoft/greenLicense/manager/test/" + licenseConfiguration.getName() +".lic");
+            fw.write(licenseB64);
+            fw.close();
+
+            fileChecker();
+
         } catch (IOException | GeneralSecurityException | DecryptionException | InterruptedException | DataLoadingException | NoSuchKeyPairException | SystemValidationException | InvalidSignatureException e) {
             System.out.println("Error while creating license");
         }
+
+
         deleteDirectory(new File(TEST_DATA_PATH));
     }
 
-    @Test
-    public void App() throws DataLoadingException, GeneralSecurityException, IOException, InterruptedException, NoSuchKeyPairException {
-
-        FssKeyPair keyPair = createKeyPair(1024);
-
-        Software software = createSoftware(keyPair);
-
-        Feature feature = new Feature();
-        feature.setName("feature");
-        feature.setValue("The value of the feature");
-        software.addFeature(feature);
-
-        License licenseConfiguration = new License();
-        licenseConfiguration.setName("license");
-        licenseConfiguration.setSoftware(software.clone());
-        licenseConfiguration.setSystemId(getSystemId(Byte.parseByte("00000000", 2)));
-
-        byte[] licenseBytes = new LicenseCreator().createLicense(licenseConfiguration);
-        String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
-
-        System.out.println(licenseB64);
-        //TODO: Make licenseB64 into file, Make Private key into file, Make function that is unlocked with public key
+    public void fileChecker() throws IOException, DataLoadingException, GeneralSecurityException, InvalidSignatureException, SystemValidationException, DecryptionException {
+        Path fileName = Path.of("./src/main/java/de/shadowsoft/greenLicense/manager/test/license.lic");
+        String licenseB64 = Files.readString(fileName);
+        byte[] licenseBytes = Base64.getDecoder().decode(licenseB64.getBytes());
+        GreenLicenseValidator validator = new GreenLicenseReader(KP.getKeyPair().getPublic().getEncoded());
+        GreenLicense license = validator.readLicense(licenseBytes);
+        if (license.isValid()) {
+            System.out.println("Your license is valid");
+        } else {
+            System.out.println("You are a pirate");
+        }
     }
 
 }
