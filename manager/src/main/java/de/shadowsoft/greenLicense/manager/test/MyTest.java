@@ -141,13 +141,9 @@ public class MyTest {
             String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
             System.out.println(licenseB64);
 
-
-            //LOCKED CODE
-            GreenLicenseValidator validator = new GreenLicenseReader(keyPair.getKeyPair().getPublic().getEncoded());
-
-            readLicense(validator, licenseConfiguration, licenseBytes);
-
-            readLicense(validator, licenseConfiguration, licenseB64);
+            OutputStream os = new FileOutputStream("./src/main/java/de/shadowsoft/greenLicense/manager/test/" + licenseConfiguration.getName() +"publicKey.txt");
+            os.write(KP.getKeyPair().getPublic().getEncoded());
+            os.close();
 
             FileWriter fw = new FileWriter("./src/main/java/de/shadowsoft/greenLicense/manager/test/" + licenseConfiguration.getName() +".lic");
             fw.write(licenseB64);

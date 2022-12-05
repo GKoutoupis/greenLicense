@@ -1,6 +1,7 @@
 package de.shadowsoft.greenLicense.manager.model.keypair;
 
 import de.shadowsoft.greenLicense.manager.tools.serializer.exception.DataLoadingException;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -8,6 +9,7 @@ import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 
+@XmlRootElement(name = "fssKeyPair")
 public class FssKeyPair {
 
     private String id;
