@@ -9,6 +9,9 @@ import de.shadowsoft.greenLicense.common.exception.SystemValidationException;
 import de.shadowsoft.greenLicense.common.license.GreenLicense;
 import de.shadowsoft.greenLicense.common.license.GreenLicenseReader;
 import de.shadowsoft.greenLicense.common.license.GreenLicenseValidator;
+import io.javalin.http.UploadedFile;
+import io.javalin.http.staticfiles.Location;
+import io.javalin.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,7 +27,11 @@ public class JavalinApp {
 
     public static Software software;
 
-    public static String file;
+    public static String fileF;
+
+    public static UploadedFile F;
+
+    public static String s;
 
     public static void main(String[] args) {
         readPK("C:\\Workplace\\greenLicense\\manager\\src\\main\\java\\de\\shadowsoft\\greenLicense\\manager\\test\\licensepublicKey.txt");
@@ -40,8 +47,9 @@ public class JavalinApp {
         }
 
 
-        Javalin app = Javalin.create(/*config*/)
-                .get("/", ctx -> ctx.result("Hello World"));
+        Javalin app = Javalin.create(config -> {
+            config.staticFiles.add("/public", Location.CLASSPATH);
+        }).start(7070);
 
         app.attribute("key","License OK!");
         app.get("/attribute",ctx -> {
@@ -49,15 +57,17 @@ public class JavalinApp {
             ctx.result(key);
         });
 
-        app.start(7070);
-        app.get("/output/$s", ctx -> {
-            System.out.println(ctx.result("Correct!"));
+        app.get("/output", ctx -> {
+            System.out.println(ctx.uploadedFiles());
 
             ctx.status(201);
         });
-        app.post("/" + file, ctx -> {
-            System.out.println("unlocked");
-            ctx.status(201);
+        app.post("/upload_single", ctx -> {
+            ctx.uploadedFiles("files").forEach(file -> {
+                FileUtil.streamToFile(file.content(), "upload/" + file.filename());
+            });
+        ctx.html("placeholder");
+        System.out.println(s);
         });
     }
 
@@ -90,12 +100,12 @@ public class JavalinApp {
     public static void readLicFile(String path){
         GreenLicenseValidator validator = new GreenLicenseReader(pk);
         try {
-            file = Files.readString(
+            fileF = Files.readString(
                     Path.of(path)
             );
             lic = validator.readLicense(
                     Base64.getDecoder().decode(
-                            file.getBytes()
+                            fileF.getBytes()
                     )
             );
         } catch (IOException | InvalidSignatureException | SystemValidationException | DecryptionException e) {
