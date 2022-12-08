@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Base64;
+import java.util.HexFormat;
 import java.util.Map;
 
 public class JavalinApp {
@@ -62,6 +63,15 @@ public class JavalinApp {
 
             ctx.status(201);
         });
+
+        app.get("/key/<key>",ctx ->{
+            if (check(ctx.pathParam("key"))) {
+                System.out.println("Valid Key");
+            } else {
+                System.out.println("Invalid Key");
+            }
+        });
+
         app.post("/upload_single", ctx -> {
             ctx.uploadedFiles("files").forEach(file -> {
                 FileUtil.streamToFile(file.content(), "upload/" + file.filename());
@@ -111,6 +121,14 @@ public class JavalinApp {
         } catch (IOException | InvalidSignatureException | SystemValidationException | DecryptionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static boolean check(String key) throws InvalidSignatureException, SystemValidationException, DecryptionException {
+        HexFormat hexFormat = HexFormat.of();
+        byte[] hexBytes = hexFormat.parseHex(key);
+        GreenLicenseValidator validator = new GreenLicenseReader(pk);
+        GreenLicense lic2 = validator.readLicense(hexBytes);
+        return lic2.isValid();
     }
 
 }

@@ -24,13 +24,14 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class MyTest {
 
-    public static License LIC;
     public static FssKeyPair KP;
 
     private static final String TEST_DATA_PATH = "./test/";
@@ -134,10 +135,25 @@ public class MyTest {
             FssKeyPair keyPair = createKeyPair(1024);
             Software software = createSoftware(keyPair);
             addFeatures(software, 5);//change
-
             License licenseConfiguration = setupLicense(software, Byte.parseByte("00000000", 2));//check | s -> binary
-            LIC =  licenseConfiguration;
             byte[] licenseBytes = createLicense(licenseConfiguration);
+            //byte to Hex
+            System.out.println("Hex:");
+            StringBuilder s = new StringBuilder();
+            HexFormat hexFormat = HexFormat.of();
+            for (byte b : licenseBytes) {
+                String st = hexFormat.toHexDigits(b);
+//                String st = String.format("%02X", b);
+                s.append(st);
+            }
+            System.out.println(s);
+            //hex to byte
+            byte[] hexBytes = hexFormat.parseHex(s);
+            System.out.println("HexBytes: " + Arrays.toString(hexBytes));
+            System.out.println("licenseBytes: " + Arrays.toString(licenseBytes));
+            String licBytesString = Arrays.toString(licenseBytes);
+            System.out.println();
+            System.out.println("licenseBytesString: " + s);
             String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
             System.out.println(licenseB64);
 
@@ -149,7 +165,16 @@ public class MyTest {
             fw.write(licenseB64);
             fw.close();
 
+            FileWriter fw2 = new FileWriter("./src/main/java/de/shadowsoft/greenLicense/manager/test/" + licenseConfiguration.getName() +"Bytes.txt");
+            fw2.write(licBytesString);
+            fw2.close();
+
+            FileWriter fw3 = new FileWriter("./src/main/java/de/shadowsoft/greenLicense/manager/test/" + licenseConfiguration.getName() +"Hex.txt");
+            fw3.write(s.toString());
+            fw3.close();
+
             fileChecker();
+//            fileChecker2();
 
         } catch (IOException | GeneralSecurityException | DecryptionException | InterruptedException | DataLoadingException | NoSuchKeyPairException | SystemValidationException | InvalidSignatureException e) {
             System.out.println("Error while creating license");
@@ -163,6 +188,10 @@ public class MyTest {
         Path fileName = Path.of("./src/main/java/de/shadowsoft/greenLicense/manager/test/license.lic");
         String licenseB64 = Files.readString(fileName);
         byte[] licenseBytes = Base64.getDecoder().decode(licenseB64.getBytes());
+        for (byte b : licenseBytes) {
+            String st = String.format("%02X", b);
+            System.out.print(st);
+        }
         GreenLicenseValidator validator = new GreenLicenseReader(KP.getKeyPair().getPublic().getEncoded());
         GreenLicense license = validator.readLicense(licenseBytes);
         if (license.isValid()) {
@@ -171,5 +200,18 @@ public class MyTest {
             System.out.println("You are a pirate");
         }
     }
+
+//    public void fileChecker2() throws IOException, DataLoadingException, GeneralSecurityException, InvalidSignatureException, SystemValidationException, DecryptionException {
+//        Path fileName = Path.of("./src/main/java/de/shadowsoft/greenLicense/manager/test/licenseBytes.txt");
+//        String licenseBytes = Files.readString(fileName);
+//        byte[] licenseBytes = Base64.getDecoder().decode(licenseB64.getBytes());
+//        GreenLicenseValidator validator = new GreenLicenseReader(KP.getKeyPair().getPublic().getEncoded());
+//        GreenLicense license = validator.readLicense(licenseBytes);
+//        if (license.isValid()) {
+//            System.out.println("Your license is valid");
+//        } else {
+//            System.out.println("You are a pirate");
+//        }
+//    }
 
 }
