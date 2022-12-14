@@ -143,7 +143,6 @@ public class MyTest {
             HexFormat hexFormat = HexFormat.of();
             for (byte b : licenseBytes) {
                 String st = hexFormat.toHexDigits(b);
-//                String st = String.format("%02X", b);
                 s.append(st);
             }
             System.out.println(s);
@@ -156,7 +155,7 @@ public class MyTest {
             System.out.println("licenseBytesString: " + s);
             String licenseB64 = new String(Base64.getEncoder().encode(licenseBytes));
             System.out.println(licenseB64);
-
+            //public key needed for validation in Back-end
             OutputStream os = new FileOutputStream("./src/main/java/de/shadowsoft/greenLicense/manager/test/" + licenseConfiguration.getName() +"publicKey.txt");
             os.write(KP.getKeyPair().getPublic().getEncoded());
             os.close();
@@ -174,7 +173,6 @@ public class MyTest {
             fw3.close();
 
             fileChecker();
-//            fileChecker2();
 
         } catch (IOException | GeneralSecurityException | DecryptionException | InterruptedException | DataLoadingException | NoSuchKeyPairException | SystemValidationException | InvalidSignatureException e) {
             System.out.println("Error while creating license");
