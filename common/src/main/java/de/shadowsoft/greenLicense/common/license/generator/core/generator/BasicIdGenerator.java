@@ -1,5 +1,6 @@
 package de.shadowsoft.greenLicense.common.license.generator.core.generator;
 
+import de.shadowsoft.greenLicense.common.license.generator.core.DeviceInfo;
 import de.shadowsoft.greenLicense.common.license.generator.core.IdCreator;
 import de.shadowsoft.greenLicense.common.license.generator.core.SysInfo;
 
@@ -36,6 +37,13 @@ public class BasicIdGenerator implements IdGenerator {
             }
 
         }
+        return new IdCreator().createId(res);
+    }
+
+    public byte[] generateDeviceId() throws IOException, InterruptedException {
+        DeviceIdResult res = new DeviceIdResult();
+        DeviceInfo info = new DeviceInfo();
+        res.setDeviceId(info.getDeviceId().getBytes());
         return new IdCreator().createId(res);
     }
 }

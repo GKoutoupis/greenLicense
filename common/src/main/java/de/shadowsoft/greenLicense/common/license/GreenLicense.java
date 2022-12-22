@@ -10,11 +10,14 @@ public class GreenLicense {
     private boolean validSignature;
     private boolean validSystem;
 
+    private boolean validDevice;
+
     public GreenLicense() {
         feature = new HashMap<>();
         validSystem = false;
         validMagicBytes = false;
         validSignature = false;
+        validDevice = false;
     }
 
     public final Map<String, String> getFeature() {
@@ -52,6 +55,14 @@ public class GreenLicense {
 
     public final void setValidSystem(final boolean validSystem) {
         this.validSystem = validSystem;
+    }
+
+    public final boolean isValidDevice() {
+        return validDevice;
+    }
+
+    public final void setValidDevice(final boolean validDevice) {
+        this.validDevice = validDevice;
     }
 }
     

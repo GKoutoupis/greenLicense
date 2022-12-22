@@ -1,6 +1,7 @@
 package de.shadowsoft.greenLicense.manager.license;
 
 import de.shadowsoft.greenLicense.common.license.generator.core.IdCreator;
+import de.shadowsoft.greenLicense.common.license.generator.core.generator.DeviceIdResult;
 import de.shadowsoft.greenLicense.common.license.generator.core.generator.IdResult;
 import de.shadowsoft.greenLicense.manager.exceptions.NoSuchKeyPairException;
 import de.shadowsoft.greenLicense.manager.model.license.License;
@@ -58,6 +59,20 @@ public abstract class LicenseCreatorBase {
         res = ArrayUtils.addAll(res, licenseIdLength);
         return ArrayUtils.addAll(res, systemId);
     }
+
+    protected byte[] getDevicePayload(License license) throws IOException, InterruptedException {
+        byte[] licensePayload = featureBuilder(license).getBytes();
+        byte[] licensePayloadLength = intToByte(licensePayload.length);
+
+        // MUST already have a device ID
+        byte[] deviceId = Base64.getDecoder().decode(license.getDeviceId().getBytes());
+        byte[] licenseIdLength = intToByte(deviceId.length);
+        byte[] res = ArrayUtils.addAll(licensePayloadLength, licensePayload);
+        res = ArrayUtils.addAll(res, licenseIdLength);
+        return ArrayUtils.addAll(res, deviceId);
+    }
+
+
 
     protected byte[] intToByte(int i) {
         return ByteBuffer.allocate(4).putInt(i).array();

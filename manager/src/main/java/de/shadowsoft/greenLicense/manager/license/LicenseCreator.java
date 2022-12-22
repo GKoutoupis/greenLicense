@@ -55,6 +55,42 @@ License scheme:
             throw new NoSuchKeyPairException(String.format("Key pair %s is not available", license.getSoftware().getKeyPairId()));
         }
     }
+
+    public byte[] createDeviceLicense(final License license) throws GeneralSecurityException, NoSuchKeyPairException, IOException, DataLoadingException, InterruptedException {
+
+/*
+License scheme:
+    <magic byte>
+    <key length><key>
+    <payload length>
+        <license length><license>
+        <ID length><ID>
+    <signature length><signature>
+  */
+        FssKeyPair fssKeyPair = KeyPairService.getInstance().getKeyById(license.getSoftware().getKeyPairId());
+        if (fssKeyPair != null) {
+            KeyPair pair = fssKeyPair.getKeyPair();
+            KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+            keyGen.init(256);
+            SecretKey secretKey = keyGen.generateKey();
+            byte[] encSecKey = encrypt(secretKey.getEncoded(), pair.getPrivate());
+            AESCrypt encAes = new AESCrypt(secretKey);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            out.write(intToByte(MAGIC_BYTES));
+            out.write(intToByte(encSecKey.length));
+            out.write(encSecKey);
+            byte[] encMsg = encAes.encrypt(getDevicePayload(license));
+            out.write(intToByte(encMsg.length));
+            out.write(encMsg);
+            byte[] signature = sign(out.toByteArray(), pair.getPrivate());
+
+            out.write(intToByte(signature.length));
+            out.write(signature);
+            return out.toByteArray();
+        } else {
+            throw new NoSuchKeyPairException(String.format("Key pair %s is not available", license.getSoftware().getKeyPairId()));
+        }
+    }
 }
     
     

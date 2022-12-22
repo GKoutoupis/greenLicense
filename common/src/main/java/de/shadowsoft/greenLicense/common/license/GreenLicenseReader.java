@@ -5,9 +5,11 @@ import de.shadowsoft.greenLicense.common.exception.DecryptionException;
 import de.shadowsoft.greenLicense.common.exception.InvalidSignatureException;
 import de.shadowsoft.greenLicense.common.exception.SystemValidationException;
 import de.shadowsoft.greenLicense.common.license.generator.Generator;
+import de.shadowsoft.greenLicense.common.license.generator.core.DeviceInfo;
 import de.shadowsoft.greenLicense.common.license.generator.core.ResultCondenser;
 import de.shadowsoft.greenLicense.common.license.generator.core.ResultDecrypt;
 import de.shadowsoft.greenLicense.common.license.generator.core.SysInfo;
+import de.shadowsoft.greenLicense.common.license.generator.core.generator.DeviceIdResult;
 import de.shadowsoft.greenLicense.common.license.generator.core.generator.IdResult;
 
 import javax.crypto.BadPaddingException;
@@ -99,6 +101,28 @@ public class GreenLicenseReader extends GreenLicenseReaderBase {
         return isValid;
     }
 
+    private boolean checkValidDevice(final byte[] licenseId) throws SystemValidationException {
+        DeviceInfo info = new DeviceInfo();
+        Generator generator = new ResultDecrypt(licenseId);
+        ResultCondenser condenser = new ResultCondenser();
+        DeviceIdResult res;
+        try {
+            Thread t = new Thread(generator);
+            t.start();
+            t.join();
+            res = condenser.deviceVaporize(generator.getResult());
+        } catch (IOException | InterruptedException e) {
+            throw new SystemValidationException("Unable to re-vaporize device ID", e);
+        }
+
+        boolean isValid = true;
+        res.setDeviceId(info.getDeviceId().getBytes());
+        if (!Arrays.equals(res.getDeviceId(), info.getDeviceId().getBytes())) {
+            isValid = false;
+        }
+        return isValid;
+    }
+
     private boolean hasValidIpAddress(final List<byte[]> ips, final List<byte[]> sysIps) {
         return byteArrayListCompareSingleItemMatch(ips, sysIps);
     }
@@ -139,9 +163,9 @@ public class GreenLicenseReader extends GreenLicenseReaderBase {
         lastReadPos = 4;
         final byte[] licensePayload = Arrays.copyOfRange(decPayload, lastReadPos, lastReadPos + licenseLength);
         lastReadPos += licenseLength;
-        final int licenseIdLength = ByteBuffer.wrap(decPayload).getInt(lastReadPos);
+        final int deviceIdLength = ByteBuffer.wrap(decPayload).getInt(lastReadPos);
         lastReadPos += 4;
-        final byte[] licenseId = Arrays.copyOfRange(decPayload, lastReadPos, lastReadPos + licenseIdLength);
+        final byte[] licenseId = Arrays.copyOfRange(decPayload, lastReadPos, lastReadPos + deviceIdLength);
         try {
             license.setValidSignature(verify(toCheck, sigByte, publicKey));
         } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
@@ -150,6 +174,51 @@ public class GreenLicenseReader extends GreenLicenseReaderBase {
         license.setValidMagicBytes(magicBytes == MAGIC_BYTES);
         license.setFeature(payloadToMap(new String(licensePayload)));
         license.setValidSystem(checkValidSystem(licenseId));
+        return license;
+    }
+
+    public GreenLicense readDeviceLicense(final byte[] lic) throws SystemValidationException, DecryptionException, InvalidSignatureException {
+        final GreenLicense license = new GreenLicense();
+        final int magicBytes = ByteBuffer.wrap(lic).getInt(0);
+        final int encLength = ByteBuffer.wrap(lic).getInt(4);
+        int lastReadPos = 8;
+        final byte[] secretKeyByte = Arrays.copyOfRange(lic, lastReadPos, lastReadPos + encLength);
+        lastReadPos += encLength;//TODO: Check if 8 is right
+        final int payloadLength = ByteBuffer.wrap(lic).getInt(lastReadPos);
+        lastReadPos += 4;
+        final byte[] encPayload = Arrays.copyOfRange(lic, lastReadPos, lastReadPos + payloadLength);
+        lastReadPos += payloadLength;
+        final int toCheckLength = lastReadPos;
+        final int signatureLength = ByteBuffer.wrap(lic).getInt(lastReadPos);
+        lastReadPos += 4;
+        final byte[] sigByte = Arrays.copyOfRange(lic, lastReadPos, lastReadPos + signatureLength);
+        final byte[] toCheck = Arrays.copyOfRange(lic, 0, toCheckLength);
+
+        final byte[] decPayload;
+        final PublicKey publicKey;
+
+        try {
+            publicKey = KeyFactory.getInstance("RSA").generatePublic(new X509EncodedKeySpec(getPk()));
+            final AESCrypt aesDec = new AESCrypt(getKey(decrypt(secretKeyByte, publicKey)));
+            decPayload = aesDec.decrypt(encPayload);
+        } catch (NoSuchAlgorithmException | InvalidKeyException | NoSuchPaddingException | BadPaddingException | InvalidKeySpecException | IllegalBlockSizeException e) {
+            throw new DecryptionException("Unable to decrypt payload", e);
+        }
+        final int licenseLength = ByteBuffer.wrap(decPayload).getInt(0);
+        lastReadPos = 4;
+        final byte[] licensePayload = Arrays.copyOfRange(decPayload, lastReadPos, lastReadPos + licenseLength);
+        lastReadPos += licenseLength;
+        final int deviceIdLength = ByteBuffer.wrap(decPayload).getInt(lastReadPos);
+        lastReadPos += 4;
+        final byte[] licenseId = Arrays.copyOfRange(decPayload, lastReadPos, lastReadPos + deviceIdLength);
+        try {
+            license.setValidSignature(verify(toCheck, sigByte, publicKey));
+        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException e) {
+            throw new InvalidSignatureException("The signature is invalid", e);
+        }
+        license.setValidMagicBytes(magicBytes == MAGIC_BYTES);
+        license.setFeature(payloadToMap(new String(licensePayload)));
+        license.setValidDevice(checkValidDevice(licenseId));
         return license;
     }
 }

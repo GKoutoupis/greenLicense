@@ -6,6 +6,8 @@ import java.io.IOException;
 public interface IdGenerator {
     byte[] generateId(final byte selector) throws InterruptedException, IOException;
 
+    byte[] generateDeviceId() throws IOException, InterruptedException;
+
 }
     
     

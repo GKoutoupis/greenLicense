@@ -92,7 +92,7 @@ public class MyTest {
     }
 
     private void readGeneralLicense(GreenLicenseValidator validator, final License licenseConfiguration, final byte[] licenseBytes) throws DecryptionException, SystemValidationException, InvalidSignatureException {
-        GreenLicense license = validator.readLicense(licenseBytes);
+        GreenLicense license = validator.readDeviceLicense(licenseBytes);
         assert license.isValid();
         System.out.println("License has " + license.getFeature().entrySet().size() + " features");
         for (Feature item : licenseConfiguration.getSoftware().getFeatures()) {
@@ -111,16 +111,16 @@ public class MyTest {
         readGeneralLicense(validator, licenseConfiguration, licenseBytes);
     }
 
-    private String getSystemId(byte selector) throws InterruptedException, IOException {
+    private String getDeviceId() throws InterruptedException, IOException {
         final IdGenerator generator = new BasicIdGenerator();
-        return new String(Base64.getEncoder().encode(generator.generateId(selector)));
+        return new String(Base64.getEncoder().encode(generator.generateDeviceId()));
     }
 
     private License setupLicense(final Software software, byte selector) throws IOException, InterruptedException {
         License createdLicense = new License();
         createdLicense.setName("license");
         createdLicense.setSoftware(software.clone());// why clone
-        createdLicense.setSystemId(getSystemId(selector));
+        createdLicense.setDeviceId(getDeviceId());
         System.out.println(createdLicense);
         return createdLicense;
     }

@@ -10,6 +10,8 @@ public interface GreenLicenseValidator {
 
     GreenLicense readLicense(byte[] content) throws DecryptionException, SystemValidationException, InvalidSignatureException;
 
+    GreenLicense readDeviceLicense(byte[] content) throws SystemValidationException, DecryptionException, InvalidSignatureException;
+
     GreenLicense readLicenseFromFile(String path) throws IOException, DecryptionException, SystemValidationException, InvalidSignatureException;
 
 }

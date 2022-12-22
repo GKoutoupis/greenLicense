@@ -10,6 +10,8 @@ public class License {
     private Software software;
     private String systemId;
 
+    private String deviceId;
+
     public License() {
         id = UUID.randomUUID().toString();
         systemId = "";
@@ -47,6 +49,14 @@ public class License {
 
     public void setSystemId(final String systemId) {
         this.systemId = systemId;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(final String deviceId) {
+        this.deviceId = deviceId;
     }
 
     @Override
